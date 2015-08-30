@@ -1,0 +1,65 @@
+#!/bin/sh
+# This script is under the GLP licence
+# Author: Panayotis Katsaloylis
+# panayotis@panayotis.com
+
+
+#DEBUG=1
+
+
+OLD=$1
+HDIR=$2
+
+if [ "$OLD" == "" ] ; then
+	echo Usage: sylpheed2maildir OLD_MAIL_DIRECTORY [NEW_MAIL_DIRECTORY]
+	echo The new mail directory defaults to ~/Mail
+fi
+if [ "$HDIR" == "" ] ; then
+	HDIR=~/Mail
+fi
+if [ "$OLD" == "$HDIR" ] ; then
+	HDIR=$OLD.maildir
+fi
+
+
+CDIR=$OLD
+
+
+debug () {
+	if [ $DEBUG ] ; then
+		echo $@
+	fi
+}
+
+for i in `ls $CDIR` ; do
+	NDIR=$CDIR/$i
+	TDIR=$HDIR/$i
+	INSIDEDIR=$HDIR/.$i.directory
+	if [ -d $NDIR ] ; then
+		if [ ! -d $INSIDEDIR ] ; then
+			mkdir -p $INSIDEDIR
+			debug Creating inside directory $INSIDEDIR
+		fi
+		echo -n "Directory discovered: $NDIR "
+		debug -n "for $TDIR."
+		echo
+		DNEW=$TDIR/new
+		DCUR=$TDIR/cur
+		DTMP=$TDIR/tmp
+		sylpheed2maildir $NDIR $INSIDEDIR
+		debug "Creating directories $DNEW $DCUR $DTMP"
+		mkdir -p $DNEW
+		mkdir -p $DCUR
+		mkdir -p $DTMP
+		debug "Copying files $NDIR to $DNEW"
+		for j in `ls $NDIR` ; do
+			OMAIL=$NDIR/$j
+			if [ -f $OMAIL ] ; then
+				MAIL=`basename $j`
+				cp $OMAIL "$DCUR/$MAIL:2,S"
+			fi
+		done
+	fi
+done
+
+
